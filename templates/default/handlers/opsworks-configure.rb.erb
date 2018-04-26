@@ -1,0 +1,53 @@
+#
+# Author:: JP <jp@perudevops.com>
+# based on https://github.com/rackspace-cookbooks/chef-slack_handler/blob/master/files/default/slack_handler_webhook.rb
+#
+#
+
+require "rubygems"
+Gem.clear_paths
+require "chef"
+require "chef/handler"
+require "timeout"
+require "net/http"
+require "uri"
+require "json"
+
+class Chef
+  class Handler
+    class SlackReporting < Chef::Handler
+      attr_accessor :timeout
+
+      def initialize(options = {})
+        @timeout = 15
+        @webhook = "<%= @webhook %>"
+      end
+
+      def report
+        begin
+            Timeout::timeout(@timeout) do
+              if run_status.success?
+                slack_message("Configure run on <%= @nodename %> #{run_status_human_readable} in #{run_status.elapsed_time} seconds.", @webhook, "good")
+              else
+                slack_message("Configure run on <%= @nodename %> #{run_status_human_readable} \n #{run_status.exception}", @webhook, "danger")
+              end
+            end
+        end
+      end
+
+      def slack_message(message,webhook,color)
+        uri = URI.parse("#{webhook}")
+        http = Net::HTTP.new(uri.host, uri.port)
+        http.use_ssl = true
+        http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+        req = Net::HTTP::Post.new(uri.path, initheader = {'Content-Type' =>'application/json'})
+        req.body = {attachments: [color: "#{color}", text: "#{message}"]}.to_json
+        response = http.request(req)
+      end
+
+      def run_status_human_readable
+        run_status.success? ? "completed" : "failed"
+      end
+    end
+  end
+end
