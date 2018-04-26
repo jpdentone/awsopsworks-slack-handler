@@ -9,3 +9,4 @@ include_recipe 'awsopsworks-slack-handler::slack'
 that will run the handler each time the a *configure* command will run
 
 ![awsopsworks-slack-handler](screenshot/awsopsworks-slack-handler.png "Sample")
+![awsopsworks-slack-handler-error](screenshot/awsopsworks-slack-handler-error.png "Sample")
